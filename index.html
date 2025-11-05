@@ -93,6 +93,7 @@
             });
             const [policyCode, setPolicyCode] = useState('');
             const [showSuccess, setShowSuccess] = useState(false);
+            const [isPolicyDeployed, setIsPolicyDeployed] = useState(false);
             const [expandedSections, setExpandedSections] = useState({
                 general: true,
                 input: true,
@@ -625,14 +626,20 @@
                                     isExpanded={expandedSections.policyRule}
                                     onToggle={() => toggleSection('policyRule')}
                                 >
-                                    <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">
-                                        <span className="text-purple-600">CASE</span>
-                                        {'\n    '}-- Managers see partial values for Tier
-                                        {'\n    '}<span className="text-purple-600">WHEN</span> <span className="text-blue-600">CURRENT_ROLE</span>() = <span className="text-red-600">'ROLE_MANAGER'</span>
-                                        {'\n        '}<span className="text-purple-600">THEN</span> <span className="text-blue-600">LEFT</span>(val, 1) || <span className="text-red-600">'***'</span>
-                                        {'\n        '}<span className="text-purple-600">ELSE</span> <span className="text-red-600">'***MASKED***'</span>
-                                        {'\n'}<span className="text-purple-600">END</span>
-                                    </pre>
+                                    {!policyCode ? (
+                                        <div className="font-mono text-sm text-gray-400 italic">
+                                            No policy code defined yet
+                                        </div>
+                                    ) : (
+                                        <pre className={`font-mono text-sm whitespace-pre-wrap ${isPolicyDeployed ? 'text-gray-800' : 'text-gray-400'}`}>
+                                            <span className={isPolicyDeployed ? 'text-purple-600' : 'text-gray-400'}>CASE</span>
+                                            {'\n    '}-- Managers see partial values for Tier
+                                            {'\n    '}<span className={isPolicyDeployed ? 'text-purple-600' : 'text-gray-400'}>WHEN</span> <span className={isPolicyDeployed ? 'text-blue-600' : 'text-gray-400'}>CURRENT_ROLE</span>() = <span className={isPolicyDeployed ? 'text-red-600' : 'text-gray-400'}>'ROLE_MANAGER'</span>
+                                            {'\n        '}<span className={isPolicyDeployed ? 'text-purple-600' : 'text-gray-400'}>THEN</span> <span className={isPolicyDeployed ? 'text-blue-600' : 'text-gray-400'}>LEFT</span>(val, 1) || <span className={isPolicyDeployed ? 'text-red-600' : 'text-gray-400'}>'***'</span>
+                                            {'\n        '}<span className={isPolicyDeployed ? 'text-purple-600' : 'text-gray-400'}>ELSE</span> <span className={isPolicyDeployed ? 'text-red-600' : 'text-gray-400'}>'***MASKED***'</span>
+                                            {'\n'}<span className={isPolicyDeployed ? 'text-purple-600' : 'text-gray-400'}>END</span>
+                                        </pre>
+                                    )}
                                 </CollapsibleSection>
 
                                 {/* Action - Return Type Section */}
@@ -772,7 +779,7 @@
             THEN val
         ELSE '***MASKED***'
     END;`}
-                                        className="w-full h-96 bg-gray-900 text-green-300 font-mono text-sm p-4 rounded"
+                                        className={`w-full h-96 bg-gray-900 font-mono text-sm p-4 rounded ${isPolicyDeployed ? 'text-green-300' : 'text-gray-500'}`}
                                         style={{ tabSize: 4 }}
                                     />
                                 </div>
@@ -794,6 +801,16 @@
                                         onClick={() => {
                                             setModalStep(2);
                                             setCurrentStep(6);
+                                            // Populate with actual policy code
+                                            if (!policyCode && selectedPolicy) {
+                                                setPolicyCode(selectedPolicy.nativeCode);
+                                            }
+                                            // Reset deployment state to show gray code first
+                                            setIsPolicyDeployed(false);
+                                            // Start 3-second timer to enable deployment and show full color
+                                            setTimeout(() => {
+                                                setIsPolicyDeployed(true);
+                                            }, 3000);
                                         }}
                                         disabled={!policyFormData.vendorPolicyKind || !policyFormData.vendorPolicyName}
                                         className="px-4 py-2 bg-blue-600 text-white rounded text-sm disabled:bg-gray-300"
@@ -816,7 +833,7 @@
                                                 setCurrentStep(7);
                                                 setTimeout(() => setShowSuccess(false), 3000);
                                             }}
-                                            disabled={!policyCode}
+                                            disabled={!isPolicyDeployed}
                                             className="px-4 py-2 bg-green-600 text-white rounded text-sm disabled:bg-gray-300"
                                         >
                                             Deploy Policy
@@ -926,7 +943,14 @@
                                                 <button className="px-4 py-2 border border-gray-300 rounded text-sm">✏️ Edit</button>
                                                 {currentStep >= 4 && (
                                                     <button 
-                                                        onClick={() => setCurrentStep(5)}
+                                                        onClick={() => {
+                                                            setCurrentStep(5);
+                                                            setShowModal(true);
+                                                            setModalStep(1);
+                                                            // Reset deployment state for new policy
+                                                            setIsPolicyDeployed(false);
+                                                            setPolicyCode('');
+                                                        }}
                                                         className="px-4 py-2 bg-green-600 text-white rounded text-sm"
                                                     >
                                                         Create from Native
@@ -937,17 +961,29 @@
                                         
                                         <div className="mb-4">
                                             <div className="text-sm font-medium mb-2">Policy</div>
-                                            <pre className="bg-gray-900 text-green-300 p-4 rounded text-xs font-mono overflow-x-auto">
+                                            {!policyCode ? (
+                                                <div className="bg-gray-100 text-gray-400 p-4 rounded text-xs font-mono italic">
+                                                    No policy code defined yet
+                                                </div>
+                                            ) : (
+                                                <pre className={`bg-gray-900 p-4 rounded text-xs font-mono overflow-x-auto ${isPolicyDeployed ? 'text-green-300' : 'text-gray-500'}`}>
 {selectedPolicy.nativeCode}
-                                            </pre>
+                                                </pre>
+                                            )}
                                         </div>
 
                                         {selectedPolicy.columns && (
                                             <div>
                                                 <div className="text-sm font-medium mb-2">Columns</div>
-                                                <pre className="bg-gray-900 text-purple-300 p-4 rounded text-xs font-mono overflow-x-auto">
+                                                {!policyCode ? (
+                                                    <div className="bg-gray-100 text-gray-400 p-4 rounded text-xs font-mono italic">
+                                                        No column assignments defined yet
+                                                    </div>
+                                                ) : (
+                                                    <pre className={`bg-gray-900 p-4 rounded text-xs font-mono overflow-x-auto ${isPolicyDeployed ? 'text-purple-300' : 'text-gray-500'}`}>
 {selectedPolicy.columns}
-                                                </pre>
+                                                    </pre>
+                                                )}
                                             </div>
                                         )}
                                     </div>
