@@ -102,6 +102,21 @@
                 assets: true
             });
 
+            // Generate dynamic audit date (5 minutes ago)
+            const generateRecentDate = () => {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - 5);
+                return now.toLocaleString('en-US', { 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true 
+                }).replace(',', '');
+            };
+
             // Data
             const pops = [
                 {
@@ -146,7 +161,7 @@
     END`,
                     columns: `ALTER TABLE PRODUCT_DEMO.SCHEMA1.SUPPORT_TABLE MODIFY COLUMN TIER SET MASKING POLICY PRODUCT_DEMO.SCHEMA1.SUPPORT_MASK_POLICY`,
                     auditEvents: [
-                        { id: 'd07d492b-f374-4e29-b4', date: '10/7/2025 9:50:56 PM', user: 'POP1TLVCGB68YT', operation: 'Create' }
+                        { id: 'd07d492b-f374-4e29-b4', date: generateRecentDate(), user: 'POP1TLVCGB68YT', operation: 'Create' }
                     ]
                 },
                 {
